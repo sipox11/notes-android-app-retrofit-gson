@@ -43,9 +43,13 @@ import java.util.UUID;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Completable;
+import io.reactivex.CompletableObserver;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.internal.operators.completable.CompletableDisposeOn;
+import io.reactivex.observers.DisposableCompletableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -143,6 +147,11 @@ public class NotesActivity extends AppCompatActivity {
         }));
     }
 
+    private void refreshUI() {
+        recyclerView.setAdapter(new NotesAdapter(getApplicationContext(), notesList));
+        manageEmptyNotesMessage();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -231,13 +240,11 @@ public class NotesActivity extends AppCompatActivity {
                 if (shouldUpdate && note != null) {
                     // update note by it's id
                     Log.d(TAG, "onClick: Updating note...");
-                    // TODO: Update note action
-//                    updateNote(note.getId(), inputNote.getText().toString(), position);
+                    updateNote(note.getId(), inputNote.getText().toString(), position);
                 } else {
                     // create new note
                     Log.d(TAG, "onClick: Creating new note...");
-                    // TODO: Create note action
-//                    createNote(inputNote.getText().toString());
+                    createNote(inputNote.getText().toString());
                 }
             }
         });
@@ -361,6 +368,7 @@ public class NotesActivity extends AppCompatActivity {
                                     "Device is registered successfully! ApiKey: " + apiKey,
                                     Toast.LENGTH_LONG
                             ).show();
+                            fetchAllNotes();
                         }
 
                         /**
@@ -400,8 +408,7 @@ public class NotesActivity extends AppCompatActivity {
                     public void onSuccess(List<NoteResponse> noteResponses) {
                         Log.d(TAG, "onSuccess: Successful retrieval of [" + notesList.size() + "] notes :)");
                         notesList = noteResponses;
-                        recyclerView.setAdapter(new NotesAdapter(getApplicationContext(), notesList));
-                        manageEmptyNotesMessage();
+                        refreshUI();
                     }
 
                     /**
@@ -419,5 +426,85 @@ public class NotesActivity extends AppCompatActivity {
                 })
         );
     }
+
+    /**
+     * Create a new note in the server.
+     * @param note The new note that is to be created.
+     */
+    private void createNote(String note) {
+        disposable.add(
+                notesApi.createNote(note)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(new DisposableSingleObserver<NoteResponse>() {
+                        /**
+                         * Notifies the SingleObserver with a single item and that the {@link Single} has finished sending
+                         * push-based notifications.
+                         * <p>
+                         * The {@link Single} will not call this method if it calls {@link #onError}.
+                         *
+                         * @param noteResponse the item emitted by the Single
+                         */
+                        @Override
+                        public void onSuccess(NoteResponse noteResponse) {
+                            Log.d(TAG, "onSuccess: New note successfully created -> Note: " + noteResponse.getNote());
+                            notesList.add(noteResponse);
+                            refreshUI();
+                        }
+
+                        /**
+                         * Notifies the SingleObserver that the {@link Single} has experienced an error condition.
+                         * <p>
+                         * If the {@link Single} calls this method, it will not thereafter call {@link #onSuccess}.
+                         *
+                         * @param e the exception encountered by the Single
+                         */
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.e(TAG, "onError: Request to create note failed...");
+                            showError(e);
+                        }
+                    })
+        );
+    }
+
+    /**
+     * Updates a note with new content.
+     *
+     * @param id            Of the note.
+     * @param newNote       The new content of the note.
+     * @param position      Its position within the list.
+     */
+    private void updateNote(final int id, final String newNote, final int position) {
+        disposable.add(
+                notesApi.updateNote(id, newNote)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeWith(new DisposableCompletableObserver() {
+                            /**
+                             * Called once the deferred computation completes normally.
+                             */
+                            @Override
+                            public void onComplete() {
+                                Log.d(TAG, "onComplete: Successfully updated note with id=" +
+                                        id + " with content: " + newNote + " in position" + position);
+                                // Update note within adapter
+                                notesList.get(position).setNote(newNote);
+                            }
+
+                            /**
+                             * Called once if the deferred computation 'throws' an exception.
+                             *
+                             * @param e the exception, not null.
+                             */
+                            @Override
+                            public void onError(Throwable e) {
+                                Log.e(TAG, "onError: Update request failed :(");
+                                showError(e);
+                            }
+                        })
+        );
+    }
+
     //endregion
 }

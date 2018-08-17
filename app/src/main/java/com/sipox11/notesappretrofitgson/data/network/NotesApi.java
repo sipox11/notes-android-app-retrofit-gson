@@ -32,6 +32,7 @@ public interface NotesApi {
     Single<List<NoteResponse>> fetchAllNotes();
 
     // Update single note
+    @FormUrlEncoded
     @PUT("notes/{id}")
     Completable updateNote(@Path("id") int noteId, @Field("note") String note);
 
