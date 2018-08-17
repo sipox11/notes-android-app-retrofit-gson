@@ -85,8 +85,7 @@ public class NotesActivity extends AppCompatActivity {
         } else {
             // user is already registered, fetch all notes
             Log.d(TAG, "onCreate: Fetching all notes...");
-            // TODO: Implement fetch all notes action
-//            fetchAllNotes();
+            fetchAllNotes();
         }
     }
 
@@ -168,6 +167,14 @@ public class NotesActivity extends AppCompatActivity {
     //endregion
 
     //region Alert dialogs and notifications
+    private void manageEmptyNotesMessage() {
+        if (notesList.size() > 0) {
+            noNotesView.setVisibility(View.GONE);
+        } else {
+            noNotesView.setVisibility(View.VISIBLE);
+        }
+    }
+
     /**
      * Shows alert dialog with EditText options to enter / edit
      * a note.
@@ -312,6 +319,9 @@ public class NotesActivity extends AppCompatActivity {
 
     //region Network
 
+    /**
+     * Generate NotesApi instance.
+     */
     private void setupApiService() {
         // Create api instance
         notesApi = ApiClient.getClient(getApplicationContext())
@@ -319,6 +329,9 @@ public class NotesActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * Register current device to generate API KEY
+     */
     private void registerDevice() {
         // Determine device id as a random one
         String devId = UUID.randomUUID().toString();
@@ -364,6 +377,47 @@ public class NotesActivity extends AppCompatActivity {
                         }
                     }));
 
+    }
+
+    /**
+     * Retrieve all notes from the server
+     */
+    private void fetchAllNotes() {
+        disposable.add(
+            notesApi.fetchAllNotes()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new DisposableSingleObserver<List<NoteResponse>>() {
+                    /**
+                     * Notifies the SingleObserver with a single item and that the {@link Single} has finished sending
+                     * push-based notifications.
+                     * <p>
+                     * The {@link Single} will not call this method if it calls {@link #onError}.
+                     *
+                     * @param noteResponses the item emitted by the Single
+                     */
+                    @Override
+                    public void onSuccess(List<NoteResponse> noteResponses) {
+                        Log.d(TAG, "onSuccess: Successful retrieval of [" + notesList.size() + "] notes :)");
+                        notesList = noteResponses;
+                        recyclerView.setAdapter(new NotesAdapter(getApplicationContext(), notesList));
+                        manageEmptyNotesMessage();
+                    }
+
+                    /**
+                     * Notifies the SingleObserver that the {@link Single} has experienced an error condition.
+                     * <p>
+                     * If the {@link Single} calls this method, it will not thereafter call {@link #onSuccess}.
+                     *
+                     * @param e the exception encountered by the Single
+                     */
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG, "onError: Notes retrieval failed :(");
+                        showError(e);
+                    }
+                })
+        );
     }
     //endregion
 }
