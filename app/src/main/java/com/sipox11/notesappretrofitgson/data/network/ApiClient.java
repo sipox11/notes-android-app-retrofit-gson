@@ -45,7 +45,7 @@ public class ApiClient {
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
-
+        return retrofit;
     }
 
     private static void initOkHttp(final Context context) {
