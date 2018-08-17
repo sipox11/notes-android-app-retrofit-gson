@@ -267,8 +267,7 @@ public class NotesActivity extends AppCompatActivity {
                     showNoteDialog(true, notesList.get(position), position);
                 } else {
                     Log.d(TAG, "onClick: Deleting note...");
-                    // TODO: Delete action
-//                    deleteNote(notesList.get(position).getId(), position);
+                    deleteNote(notesList.get(position).getId(), position);
                 }
             }
         });
@@ -490,6 +489,7 @@ public class NotesActivity extends AppCompatActivity {
                                         id + " with content: " + newNote + " in position" + position);
                                 // Update note within adapter
                                 notesList.get(position).setNote(newNote);
+                                refreshUI();
                             }
 
                             /**
@@ -503,6 +503,41 @@ public class NotesActivity extends AppCompatActivity {
                                 showError(e);
                             }
                         })
+        );
+    }
+
+    /**
+     * Deletes a note.
+     * @param id        Id of the note that is to be deleted.
+     * @param position  Position of the note within the list.
+     */
+    private void deleteNote(final int id, final int position) {
+        disposable.add(
+                notesApi.deleteNote(id)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeWith(new DisposableCompletableObserver() {
+                        /**
+                         * Called once the deferred computation completes normally.
+                         */
+                        @Override
+                        public void onComplete() {
+                            Log.d(TAG, "onComplete: Successfully deleted note with id " + id);
+                            notesList.remove(position);
+                            refreshUI();
+                        }
+
+                        /**
+                         * Called once if the deferred computation 'throws' an exception.
+                         *
+                         * @param e the exception, not null.
+                         */
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.e(TAG, "onError: Failure when trying to delete note with id " + id);
+                            showError(e);
+                        }
+                    })
         );
     }
 
