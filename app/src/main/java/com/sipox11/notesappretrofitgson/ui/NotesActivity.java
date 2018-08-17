@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.UUID;
 
 import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -98,6 +99,7 @@ public class NotesActivity extends AppCompatActivity {
 
     //region UI management
     private void setupUI() {
+        ButterKnife.bind(this);
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(getString(R.string.activity_title_home));
         setSupportActionBar(toolbar);
