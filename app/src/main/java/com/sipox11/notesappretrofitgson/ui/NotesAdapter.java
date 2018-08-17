@@ -11,7 +11,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.sipox11.notesappretrofitgson.R;
-import com.sipox11.notesappretrofitgson.data.models.Note;
+import com.sipox11.notesappretrofitgson.data.network.response_models.NoteResponse;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,7 +24,7 @@ import butterknife.ButterKnife;
 public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.MyViewHolder> {
 
     private Context context;
-    private List<Note> notesList;
+    private List<NoteResponse> notesList;
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
 
@@ -44,7 +44,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.MyViewHolder
     }
 
 
-    public NotesAdapter(Context context, List<Note> notesList) {
+    public NotesAdapter(Context context, List<NoteResponse> notesList) {
         this.context = context;
         this.notesList = notesList;
     }
@@ -59,7 +59,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.MyViewHolder
 
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
-        Note note = notesList.get(position);
+        NoteResponse note = notesList.get(position);
 
         holder.note.setText(note.getNote());
 

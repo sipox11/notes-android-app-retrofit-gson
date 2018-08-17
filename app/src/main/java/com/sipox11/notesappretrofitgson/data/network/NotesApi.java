@@ -1,6 +1,5 @@
 package com.sipox11.notesappretrofitgson.data.network;
 
-import com.sipox11.notesappretrofitgson.data.models.Note;
 import com.sipox11.notesappretrofitgson.data.network.response_models.NoteResponse;
 import com.sipox11.notesappretrofitgson.data.network.response_models.UserResponse;
 
@@ -15,7 +14,6 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
-import retrofit2.http.Query;
 
 public interface NotesApi {
 
@@ -31,7 +29,7 @@ public interface NotesApi {
 
     // Fetch all notes
     @GET("notes/all")
-    Single<List<Note>> fetchAllNotes();
+    Single<List<NoteResponse>> fetchAllNotes();
 
     // Update single note
     @PUT("notes/{id}")
